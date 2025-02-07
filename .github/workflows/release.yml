@@ -88,7 +88,7 @@ jobs:
       # CocoaPods 1.12+（兼容 RN 0.76）
       - name: Install CocoaPods
         run: |
-          sudo gem install cocoapods -v 1.12.1
+          sudo gem install cocoapods
           cd ios && pod install
 
       - name: Set up signing certificate
@@ -97,7 +97,6 @@ jobs:
           CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         run: |
           echo $CERTIFICATE_P12 | base64 --decode > certificate.p12
-          echo $CERTIFICATE_PASSWORD
           security create-keychain -p "" build.keychain
           security default-keychain -s build.keychain
           security unlock-keychain -p "" build.keychain
@@ -114,10 +113,11 @@ jobs:
 
       # 构建 iOS IPA（假设已配置签名和 ExportOptions.plist）
       - name: Build iOS IPA
+        env:
+          TEAM_ID: ${{ secrets.TEAM_ID }}
         run: |
           cd ios
-          xcodebuild -workspace vision_camera.xcworkspace -scheme vision_camera -sdk iphoneos -configuration Release archive -archivePath $PWD/build/vision_camera.xcarchive
-          echo "---------------------------------------------------------------------------------我是分割线君---------------------------------------------------------------------------------"
+          xcodebuild -workspace vision_camera.xcworkspace -scheme vision_camera -sdk iphoneos -configuration Release -archivePath $PWD/build/vision_camera.xcarchive DEVELOPMENT_TEAM=$TEAM_ID CODE_SIGN_IDENTITY="iPhone Distribution" archive
           echo "---------------------------------------------------------------------------------我是分割线君---------------------------------------------------------------------------------"
           echo "---------------------------------------------------------------------------------我是分割线君---------------------------------------------------------------------------------"
           echo "---------------------------------------------------------------------------------我是分割线君---------------------------------------------------------------------------------"
