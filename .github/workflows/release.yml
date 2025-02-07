@@ -12,6 +12,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Cache Node.js modules
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
+
       # React Native 0.76 推荐 Node.js 18.x
       - name: Install Node.js 22.x
         uses: actions/setup-node@v4
@@ -50,6 +59,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Cache Node.js modules
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
+
+      - name: Cache CocoaPods
+        id: pods-cache
+        uses: actions/cache@v4
+        with:
+          path: ios/Pods
+          key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: |
+            pods-${{ runner.os }}-
+
       # React Native 0.76 需要 Xcode 14+
       - name: Select Xcode 14
         run: sudo xcode-select -s /Applications/Xcode_14.3.1.app
@@ -72,15 +99,15 @@ jobs:
       - name: Build iOS IPA
         run: |
           cd ios
-          xcodebuild -workspace YourApp.xcworkspace -scheme YourApp -sdk iphoneos -configuration Release archive -archivePath $PWD/build/YourApp.xcarchive
-          xcodebuild -exportArchive -archivePath $PWD/build/YourApp.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath $PWD/build
+          xcodebuild -workspace vision_camera.xcworkspace -scheme vision_camera -sdk iphoneos -configuration Release archive -archivePath $PWD/build/vision_camera.xcarchive
+          xcodebuild -exportArchive -archivePath $PWD/build/vision_camera.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath $PWD/build
 
       # 上传 IPA 到 Artifact
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
           name: ios-release.ipa
-          path: ios/build/YourApp.ipa
+          path: ios/build/vision_camera.ipa
 
   create-release:
     runs-on: ubuntu-latest
@@ -129,5 +156,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: dist/ios-release.ipa
-          asset_name: YourApp.ipa
+          asset_name: vision_camera.ipa
           asset_content_type: application/octet-stream
