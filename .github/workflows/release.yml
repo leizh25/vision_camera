@@ -29,6 +29,9 @@ jobs:
         cd android
         ./gradlew assembleRelease
 
+    - name: List Android build outputs
+      run: ls -R android/app/build/outputs/apk/release/
+
   build_ios:
     runs-on: macos-latest
 
@@ -49,6 +52,9 @@ jobs:
         cd ios
         xcodebuild -workspace YourApp.xcworkspace -scheme YourApp -configuration Release -sdk iphoneos archive -archivePath $PWD/build/YourApp.xcarchive
         xcodebuild -exportArchive -archivePath $PWD/build/YourApp.xcarchive -exportOptionsPlist exportOptions.plist -exportPath $PWD/build
+
+    - name: List iOS build outputs
+      run: ls -R ios/build/
 
   release:
     needs: [build, build_ios]
