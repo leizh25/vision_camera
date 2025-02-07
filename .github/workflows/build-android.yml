@@ -1,0 +1,35 @@
+name: Build and Release React Native App
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build_android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Android APK
+        working-directory: android
+        run: |
+          # 如有需要，可先清理旧的构建产物
+          ./gradlew clean
+          ./gradlew assembleRelease
+
+      - name: Upload Android Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: android-apk
+          # 根据你的 Gradle 配置，APK 路径可能不同
+          path: android/app/build/outputs/apk/release/app-release.apk
