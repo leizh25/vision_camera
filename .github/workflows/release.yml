@@ -117,12 +117,12 @@ jobs:
           TEAM_ID: ${{ secrets.TEAM_ID }}
         run: |
           cd ios
-          xcodebuild -workspace vision_camera.xcworkspace -scheme vision_camera -sdk iphoneos -configuration Release -archivePath $PWD/build/vision_camera.xcarchive DEVELOPMENT_TEAM=$TEAM_ID CODE_SIGN_IDENTITY="iPhone Development" archive
-          echo "---------------------------------------------------------------------------------我是分割线君---------------------------------------------------------------------------------"
-          echo "---------------------------------------------------------------------------------我是分割线君---------------------------------------------------------------------------------"
-          echo "---------------------------------------------------------------------------------我是分割线君---------------------------------------------------------------------------------"
-          xcodebuild -exportArchive -archivePath $PWD/build/vision_camera.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath $PWD/build
+          xcodebuild -workspace vision_camera.xcworkspace -scheme vision_camera -sdk iphoneos -configuration Release archive -archivePath $PWD/build/vision_camera.xcarchive DEVELOPMENT_TEAM=$TEAM_ID CODE_SIGN_IDENTITY="iPhone Development"
 
+      - name: Export .ipa file
+        run: |
+          xcodebuild -exportArchive -archivePath ios/build/vision_camera.xcarchive -exportOptionsPlist ios/ExportOptions.plist -exportPath ios/build
+  
       # 上传 IPA 到 Artifact
       - name: Upload IPA
         uses: actions/upload-artifact@v4
