@@ -111,7 +111,7 @@ jobs:
 
   create-release:
     runs-on: ubuntu-latest
-    needs: [build-android, build-ios]
+    needs: [build-android]
     steps:
       - name: Download Android APK
         uses: actions/download-artifact@v4
