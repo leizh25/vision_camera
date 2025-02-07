@@ -5,7 +5,7 @@
   <key>method</key>
   <string>development</string> <!-- 可选：app-store, ad-hoc, enterprise, development -->
   <key>teamID</key>
-  <string>$TEAM_ID</string> <!-- 从 GitHub Secrets 中注入 -->
+  <string>B5C39263N2</string> <!-- 从 GitHub Secrets 中注入 -->
   <key>signingStyle</key>
   <string>manual</string>
   <key>provisioningProfiles</key>
