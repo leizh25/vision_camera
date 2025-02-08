@@ -10,8 +10,8 @@
   <string>manual</string>
   <key>provisioningProfiles</key>
   <dict>
-    <key>$BUNDLE_ID</key> <!-- 从 GitHub Secrets 中注入 -->
-    <string>BMS Cloud_Dev</string> <!-- 替换为实际的 Profile 名称 -->
+    <key>B5C39263N2.io.enexer.com</key> <!-- 从 GitHub Secrets 中注入 -->
+    <string>enexerProfile</string> <!-- 替换为实际的 Profile 名称 -->
   </dict>
   <key>compileBitcode</key>
   <false/>
