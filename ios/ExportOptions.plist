@@ -5,18 +5,18 @@
   <key>method</key>
   <string>development</string> <!-- 可选：app-store, ad-hoc, enterprise, development -->
   <key>teamID</key>
-  <string>$TEAM_ID</string> <!-- 从 GitHub Secrets 中注入 -->
+  <string>TEAM_ID_PLACEHOLDER</string> <!-- 占位符，由 GitHub Actions 替换 -->
   <key>signingStyle</key>
   <string>manual</string>
   <key>provisioningProfiles</key>
   <dict>
-    <key>B5C39263N2.io.enexer.com</key> <!-- 从 GitHub Secrets 中注入 -->
+    <key>BUNDLE_ID_PLACEHOLDER</key> <!-- 占位符，由 GitHub Actions 替换 -->
     <string>enexerProfile</string> <!-- 替换为实际的 Profile 名称 -->
   </dict>
   <key>compileBitcode</key>
   <false/>
   <key>thinning</key>
-  <string>none</string>
+  <string>&lt;none&gt;</string>
   <key>uploadBitcode</key>
   <false/>
   <key>uploadSymbols</key>
