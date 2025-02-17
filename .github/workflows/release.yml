@@ -1,191 +1,79 @@
-name: Build and Release
+name: iOS Development Build
 
 on:
   push:
     tags:
-      - 'v*' # 通过 `git tag v1.0.0 && git push origin v1.0.0` 触发
+      - 'dev-*' # 使用dev-开头的标签触发
 
 jobs:
-  build-android:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Cache Node.js modules
-        id: node-modules-cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
-
-      # React Native 0.76 推荐 Node.js 18.x
-      - name: Install Node.js 22.x
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22.x
-
-      # Android 需要 JDK 17（React Native 0.76 兼容 JDK 11+，但推荐 17）
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
-        with:
-          java-version: 17
-          distribution: 'zulu'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x android/gradlew
-
-      # 构建 Android APK（假设已配置签名）
-      - name: Build Android Release
-        run: |
-          cd android
-          ./gradlew assembleRelease
-
-      # 上传 APK 到 Artifact
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-release.apk
-          path: android/app/build/outputs/apk/release/app-release.apk
-
   build-ios:
     runs-on: macos-latest
+    timeout-minutes: 40
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Cache Node.js modules
-        id: node-modules-cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
+    # 证书处理优化
+    - name: Install Certificate
+      env:
+        CERT_CONTENT: ${{ secrets.IOS_CERTIFICATE }}
+        CERT_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+      run: |
+        echo "$CERT_CONTENT" | base64 -D > certificate.p12
+        security create-keychain -p "$CERT_PASSWORD" build.keychain
+        security import certificate.p12 -k build.keychain -P "$CERT_PASSWORD" -T /usr/bin/codesign
+        security list-keychains -s build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p "$CERT_PASSWORD" build.keychain
 
-      - name: Cache CocoaPods
-        id: pods-cache
-        uses: actions/cache@v4
-        with:
-          path: ios/Pods
-          key: pods-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock') }}
-          restore-keys: |
-            pods-${{ runner.os }}-
+    # 描述文件安装
+    - name: Install Provisioning Profile
+      env:
+        PROFILE_CONTENT: ${{ secrets.PROVISIONING_PROFILE }}
+      run: |
+        echo "$PROFILE_CONTENT" | base64 -D > profile.mobileprovision
+        UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" /dev/stdin <<< $(security cms -D -i profile.mobileprovision))
+        mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+        cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/$UUID.mobileprovision
 
-      - name: Install Node.js 22.x
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22.x
+    # 构建配置
+    - name: Build IPA
+      env:
+        TEAM_ID: ${{ secrets.TEAM_ID }}
+        PRODUCT_BUNDLE_IDENTIFIER: ${{ secrets.BUNDLE_ID }}
+      run: |
+        xcodebuild -workspace ios/vision_camera.xcworkspace \
+          -scheme vision_camera-Development \
+          -configuration Debug \
+          -destination 'generic/platform=iOS' \
+          -archivePath build/vision_camera.xcarchive \
+          CODE_SIGN_STYLE=Manual \
+          PROVISIONING_PROFILE_SPECIFIER=${{ secrets.PROVISIONING_PROFILE_NAME }} \
+          DEVELOPMENT_TEAM=$TEAM_ID \
+          archive
 
-      - name: Install dependencies
-        run: npm install
+        xcodebuild -exportArchive \
+          -archivePath build/vision_camera.xcarchive \
+          -exportOptionsPlist ios/ExportOptions-Development.plist \
+          -exportPath ./build
 
-      # CocoaPods 1.12+（兼容 RN 0.76）
-      - name: Install CocoaPods
-        run: |
-          sudo gem install cocoapods
-          cd ios && pod install
+    # Release发布优化
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      if: success()
+      with:
+        tag_name: ${{ github.ref }}
+        name: Development Build ${{ github.ref }}
+        body: Automated development build
+        prerelease: true
 
-      - name: Set up signing certificate
-        env:
-          CERTIFICATE_P12: ${{ secrets.CERTIFICATE_P12 }}
-          CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
-        run: |
-          echo $CERTIFICATE_P12 | base64 --decode > certificate.p12
-          security create-keychain -p "" build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p "" build.keychain
-          security import certificate.p12 -k build.keychain -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
-
-      - name: Set up provisioning profile
-        env:
-          PROVISIONING_PROFILE: ${{ secrets.PROVISIONING_PROFILE }}
-          BUNDLE_ID: ${{ secrets.BUNDLE_ID }}
-        run: |
-          echo $PROVISIONING_PROFILE | base64 --decode > profile.mobileprovision
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/$BUNDLE_ID.mobileprovision
-
-      - name: Generate ExportOptions.plist
-        env:
-          TEAM_ID: ${{ secrets.TEAM_ID }}
-          BUNDLE_ID: ${{ secrets.BUNDLE_ID }}
-        run: |
-          sed -i '' "s/TEAM_ID_PLACEHOLDER/$TEAM_ID/g" ios/ExportOptions.plist
-          sed -i '' "s/BUNDLE_ID_PLACEHOLDER/$BUNDLE_ID/g" ios/ExportOptions.plist
-
-      # 构建 iOS IPA（假设已配置签名和 ExportOptions.plist）
-      - name: Build iOS IPA
-        env:
-          TEAM_ID: ${{ secrets.TEAM_ID }}
-          # xcodebuild -workspace vision_camera.xcworkspace -scheme vision_camera -sdk iphoneos -configuration Release -archivePath $PWD/build/vision_camercarchive DEVELOPMENT_TEAM=$TEAM_ID CODE_SIGN_IDENTITY="iPhone Development" archive
-        run: |
-          cd ios
-          xcodebuild -workspace vision_camera.xcworkspace -scheme "vision_camera" -sdk iphoneos -configuration Release -destination generic/platform=iOS -archivePath $PWD/build/vision_camercarchive archive 
-
-      - name: Export .ipa file
-        run: |
-          xcodebuild -exportArchive -archivePath ios/build/vision_camera.xcarchive -exportOptionsPlist ios/ExportOptions.plist -exportPath ios/build
-  
-      # 上传 IPA 到 Artifact
-      - name: Upload IPA
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-release.ipa
-          path: ios/build/vision_camera.ipa
-
-  create-release:
-    runs-on: ubuntu-latest
-    needs: [build-android]
-    steps:
-      - name: Download Android APK
-        uses: actions/download-artifact@v4
-        with:
-          name: android-release.apk
-          path: dist
-
-      #   - name: Download iOS IPA
-      #     uses: actions/download-artifact@v4
-      #     with:
-      #       name: ios-release.ipa
-      #       path: dist
-
-      # 创建 GitHub Release
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-
-      # 上传 APK 到 Release
-      - name: Upload Android APK
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/android-release.apk
-          asset_name: app-release.apk
-          asset_content_type: application/vnd.android.package-archive
-
-      # 上传 IPA 到 Release
-    #   - name: Upload iOS IPA
-    #     uses: actions/upload-release-asset@v1
-    #     env:
-    #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #     with:
-    #       upload_url: ${{ steps.create_release.outputs.upload_url }}
-    #       asset_path: dist/ios-release.ipa
-    #       asset_name: vision_camera.ipa
-    #       asset_content_type: application/octet-stream
+    - name: Upload IPA
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./build/vision_camera.ipa
+        asset_name: vision_camera_development.ipa
+        asset_content_type: application/octet-stream
