@@ -37,6 +37,14 @@ jobs:
         mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
         cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/$UUID.mobileprovision
 
+
+    - name: Install Pods
+      working-directory: ./ios
+      run: |
+        sudo arch -x86_64 gem install ffi # M1芯片兼容处理
+        pod install --repo-update
+
+
     # 构建配置
     - name: Build IPA
       env:
