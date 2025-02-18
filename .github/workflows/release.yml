@@ -37,6 +37,14 @@ jobs:
         mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
         cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/$UUID.mobileprovision
 
+    # React Native 0.76 推荐 Node.js 18.x
+    - name: Install Node.js 22.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22.x
+
+    - name: Install dependencies
+      run: npm install
 
     # CocoaPods 1.12+（兼容 RN 0.76）
     - name: Install CocoaPods
