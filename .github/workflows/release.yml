@@ -43,7 +43,7 @@ jobs:
         TEAM_ID: ${{ secrets.TEAM_ID }}
         PRODUCT_BUNDLE_IDENTIFIER: ${{ secrets.BUNDLE_ID }}
       run: |
-        xcodebuild -workspace ios/vision_camera.xcworkspace \
+        xcodebuild -workspace ios/vision_camera.xcodeproj \
           -scheme vision_camera-Development \
           -configuration Debug \
           -destination 'generic/platform=iOS' \
