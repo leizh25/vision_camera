@@ -272,7 +272,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "B5C39263N2.io.enexer.com";
+				PRODUCT_BUNDLE_IDENTIFIER = "io.enexer.com";
 				PRODUCT_NAME = vision_camera;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -300,7 +300,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "B5C39263N2.io.enexer.com";
+				PRODUCT_BUNDLE_IDENTIFIER = "io.enexer.com";
 				PRODUCT_NAME = vision_camera;
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
