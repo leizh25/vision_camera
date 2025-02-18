@@ -40,9 +40,9 @@ jobs:
 
     # CocoaPods 1.12+（兼容 RN 0.76）
     - name: Install CocoaPods
-        run: |
-          sudo gem install cocoapods
-          cd ios && pod install
+      run: |
+        sudo gem install cocoapods
+        cd ios && pod install
 
 
     # 构建配置
